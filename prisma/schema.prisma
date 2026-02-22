@@ -1,0 +1,472 @@
+// ============================================================
+// Holiday Ice Cream POS – Prisma Schema (MySQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ────────────────────────────────────────────────────────────
+// ENUMS
+// ────────────────────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  manager
+  cashier
+}
+
+enum VariationType {
+  size
+  flavor
+  combo
+}
+
+enum PaymentMethod {
+  cash
+  card
+  online
+  credit
+  split
+}
+
+enum PaymentStatus {
+  paid
+  partial
+  credit
+}
+
+enum SaleStatus {
+  completed
+  refunded
+  partial_refund
+  held
+}
+
+enum SplitMethod {
+  cash
+  card
+  online
+}
+
+enum PurchaseStatus {
+  received
+  pending
+  cancelled
+}
+
+enum AdjustmentType {
+  in
+  out
+  adjustment
+}
+
+enum LedgerType {
+  credit
+  debit
+}
+
+enum ReferenceType {
+  sale
+  payment
+}
+
+enum SimplePaymentMethod {
+  cash
+  card
+  online
+}
+
+// ────────────────────────────────────────────────────────────
+// USERS
+// ────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  role      UserRole @default(cashier)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sales            Sale[]
+  purchases        Purchase[]
+  expenses         Expense[]
+  stockAdjustments StockAdjustment[]
+  customerPayments CustomerPayment[]
+  activityLogs     ActivityLog[]
+
+  @@map("users")
+}
+
+// ────────────────────────────────────────────────────────────
+// CATEGORIES
+// ────────────────────────────────────────────────────────────
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+// ────────────────────────────────────────────────────────────
+// PRODUCTS
+// ────────────────────────────────────────────────────────────
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(200)
+  categoryId  Int?     @map("category_id")
+  price       Decimal  @db.Decimal(10, 2)
+  costPrice   Decimal  @db.Decimal(10, 2) @map("cost_price")
+  stock       Int      @default(0)
+  barcode     String?  @db.VarChar(100)
+  image       String?  @db.VarChar(500)
+  description String?  @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category      Category?          @relation(fields: [categoryId], references: [id])
+  variations    ProductVariation[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+  stockAdj      StockAdjustment[]
+
+  @@index([barcode])
+  @@index([categoryId])
+  @@index([active])
+  @@map("products")
+}
+
+// ────────────────────────────────────────────────────────────
+// PRODUCT VARIATIONS
+// ────────────────────────────────────────────────────────────
+
+model ProductVariation {
+  id            Int           @id @default(autoincrement())
+  productId     Int           @map("product_id")
+  name          String        @db.VarChar(100)
+  type          VariationType
+  priceModifier Decimal       @default(0) @db.Decimal(10, 2) @map("price_modifier")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variations")
+}
+
+// ────────────────────────────────────────────────────────────
+// CUSTOMERS
+// ────────────────────────────────────────────────────────────
+
+model Customer {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  phone         String?  @db.VarChar(20)
+  email         String?  @db.VarChar(100)
+  address       String?  @db.Text
+  creditLimit   Decimal  @default(0) @db.Decimal(10, 2) @map("credit_limit")
+  creditBalance Decimal  @default(0) @db.Decimal(10, 2) @map("credit_balance")
+  loyaltyPoints Int      @default(0) @map("loyalty_points")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sales    Sale[]
+  ledger   CustomerLedger[]
+  payments CustomerPayment[]
+
+  @@index([phone])
+  @@index([name])
+  @@map("customers")
+}
+
+// ────────────────────────────────────────────────────────────
+// SALES
+// ────────────────────────────────────────────────────────────
+
+model Sale {
+  id            Int           @id @default(autoincrement())
+  saleNumber    String        @unique @db.VarChar(50) @map("sale_number")
+  customerId    Int?          @map("customer_id")
+  userId        Int           @map("user_id")
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  tax           Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod @default(cash) @map("payment_method")
+  paymentStatus PaymentStatus @default(paid) @map("payment_status")
+  status        SaleStatus    @default(completed)
+  cashTendered  Decimal       @default(0) @db.Decimal(10, 2) @map("cash_tendered")
+  changeAmount  Decimal       @default(0) @db.Decimal(10, 2) @map("change_amount")
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+  items         SaleItem[]
+  splitPayments SplitPayment[]
+
+  @@index([createdAt])
+  @@index([saleNumber])
+  @@index([customerId])
+  @@index([status])
+  @@map("sales")
+}
+
+// ────────────────────────────────────────────────────────────
+// SALE ITEMS
+// ────────────────────────────────────────────────────────────
+
+model SaleItem {
+  id          Int     @id @default(autoincrement())
+  saleId      Int     @map("sale_id")
+  productId   Int     @map("product_id")
+  productName String  @db.VarChar(200) @map("product_name")
+  variation   String? @db.VarChar(100)
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)
+  discount    Decimal @default(0) @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@map("sale_items")
+}
+
+// ────────────────────────────────────────────────────────────
+// SPLIT PAYMENTS
+// ────────────────────────────────────────────────────────────
+
+model SplitPayment {
+  id     Int         @id @default(autoincrement())
+  saleId Int         @map("sale_id")
+  method SplitMethod
+  amount Decimal     @db.Decimal(10, 2)
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("split_payments")
+}
+
+// ────────────────────────────────────────────────────────────
+// HELD BILLS
+// ────────────────────────────────────────────────────────────
+
+model HeldBill {
+  id           Int      @id @default(autoincrement())
+  reference    String   @db.VarChar(100)
+  itemsJson    String   @db.LongText @map("items_json")
+  customerId   Int?     @map("customer_id")
+  customerName String?  @db.VarChar(100) @map("customer_name")
+  discount     Decimal  @default(0) @db.Decimal(10, 2)
+  notes        String?  @db.Text
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("held_bills")
+}
+
+// ────────────────────────────────────────────────────────────
+// SUPPLIERS
+// ────────────────────────────────────────────────────────────
+
+model Supplier {
+  id        Int        @id @default(autoincrement())
+  name      String     @db.VarChar(200)
+  phone     String?    @db.VarChar(20)
+  email     String?    @db.VarChar(100)
+  address   String?    @db.Text
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  purchases Purchase[]
+
+  @@map("suppliers")
+}
+
+// ────────────────────────────────────────────────────────────
+// PURCHASES (INVENTORY)
+// ────────────────────────────────────────────────────────────
+
+model Purchase {
+  id             Int            @id @default(autoincrement())
+  purchaseNumber String         @unique @db.VarChar(50) @map("purchase_number")
+  supplierId     Int?           @map("supplier_id")
+  userId         Int            @map("user_id")
+  total          Decimal        @db.Decimal(10, 2)
+  notes          String?        @db.Text
+  status         PurchaseStatus @default(received)
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  supplier Supplier?      @relation(fields: [supplierId], references: [id])
+  user     User           @relation(fields: [userId], references: [id])
+  items    PurchaseItem[]
+
+  @@index([createdAt])
+  @@map("purchases")
+}
+
+// ────────────────────────────────────────────────────────────
+// PURCHASE ITEMS
+// ────────────────────────────────────────────────────────────
+
+model PurchaseItem {
+  id         Int     @id @default(autoincrement())
+  purchaseId Int     @map("purchase_id")
+  productId  Int     @map("product_id")
+  quantity   Int
+  costPrice  Decimal @db.Decimal(10, 2) @map("cost_price")
+  total      Decimal @db.Decimal(10, 2)
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@map("purchase_items")
+}
+
+// ────────────────────────────────────────────────────────────
+// STOCK ADJUSTMENTS
+// ────────────────────────────────────────────────────────────
+
+model StockAdjustment {
+  id            Int            @id @default(autoincrement())
+  productId     Int            @map("product_id")
+  userId        Int            @map("user_id")
+  type          AdjustmentType
+  quantity      Int
+  previousStock Int            @default(0) @map("previous_stock")
+  newStock      Int            @default(0) @map("new_stock")
+  reason        String?        @db.VarChar(255)
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@map("stock_adjustments")
+}
+
+// ────────────────────────────────────────────────────────────
+// EXPENSE CATEGORIES
+// ────────────────────────────────────────────────────────────
+
+model ExpenseCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+// ────────────────────────────────────────────────────────────
+// EXPENSES
+// ────────────────────────────────────────────────────────────
+
+model Expense {
+  id          Int              @id @default(autoincrement())
+  categoryId  Int?             @map("category_id")
+  userId      Int              @map("user_id")
+  amount      Decimal          @db.Decimal(10, 2)
+  description String?          @db.VarChar(500)
+  expenseDate DateTime         @map("expense_date") @db.Date
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  category ExpenseCategory? @relation(fields: [categoryId], references: [id])
+  user     User             @relation(fields: [userId], references: [id])
+
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+// ────────────────────────────────────────────────────────────
+// CUSTOMER LEDGER
+// ────────────────────────────────────────────────────────────
+
+model CustomerLedger {
+  id            Int           @id @default(autoincrement())
+  customerId    Int           @map("customer_id")
+  type          LedgerType
+  amount        Decimal       @db.Decimal(10, 2)
+  balance       Decimal       @db.Decimal(10, 2)
+  referenceId   Int?          @map("reference_id")
+  referenceType ReferenceType @map("reference_type")
+  notes         String?       @db.VarChar(500)
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("customer_ledger")
+}
+
+// ────────────────────────────────────────────────────────────
+// CUSTOMER PAYMENTS
+// ────────────────────────────────────────────────────────────
+
+model CustomerPayment {
+  id            Int                 @id @default(autoincrement())
+  customerId    Int                 @map("customer_id")
+  userId        Int                 @map("user_id")
+  amount        Decimal             @db.Decimal(10, 2)
+  paymentMethod SimplePaymentMethod @default(cash) @map("payment_method")
+  notes         String?             @db.VarChar(500)
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("customer_payments")
+}
+
+// ────────────────────────────────────────────────────────────
+// SETTINGS
+// ────────────────────────────────────────────────────────────
+
+model Setting {
+  id           Int      @id @default(autoincrement())
+  settingKey   String   @unique @db.VarChar(100) @map("setting_key")
+  settingValue String?  @db.Text @map("setting_value")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+// ────────────────────────────────────────────────────────────
+// ACTIVITY LOGS
+// ────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  action      String   @db.VarChar(100)
+  description String?  @db.Text
+  ipAddress   String?  @db.VarChar(50) @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("activity_logs")
+}
