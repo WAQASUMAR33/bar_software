@@ -17,9 +17,7 @@ const Receipt = forwardRef(function Receipt({ sale, settings = {} }, ref) {
           style={{ maxHeight: '64px', maxWidth: '160px', objectFit: 'contain' }}
         />
         <p className="text-base font-bold">{settings.shop_name || 'Holiday Ice Cream Bar'}</p>
-        {settings.shop_address && <p className="text-gray-600">{settings.shop_address}</p>}
-        {settings.shop_phone && <p className="text-gray-600">Tel: {settings.shop_phone}</p>}
-        {settings.shop_email && <p className="text-gray-600">{settings.shop_email}</p>}
+        <p className="text-gray-600">Jail Chowk GPO Road Mandi Bahauddin</p>
       </div>
 
       {/* Invoice info */}
@@ -124,6 +122,12 @@ const Receipt = forwardRef(function Receipt({ sale, settings = {} }, ref) {
       <div className="text-center text-gray-500 border-t-2 border-dashed border-gray-300 pt-3">
         <p className="font-medium">{settings.receipt_footer || 'Thank you for your visit!'}</p>
         <p className="mt-2">🍦 Enjoy your treat! 🍦</p>
+      </div>
+
+      {/* Developer credit */}
+      <div className="text-center border-t border-dashed border-gray-200 mt-3 pt-2">
+        <p className="text-gray-400" style={{ fontSize: '9px' }}>Dev By: RapidTechPro</p>
+        <p className="text-gray-400" style={{ fontSize: '9px' }}>+92340-3051059</p>
       </div>
     </div>
   );
