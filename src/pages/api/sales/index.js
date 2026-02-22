@@ -101,13 +101,15 @@ async function handler(req, res) {
           },
         });
 
-        // Decrement stock
-        for (const item of items) {
-          await tx.product.update({
-            where: { id: parseInt(item.id) },
-            data: { stock: { decrement: parseInt(item.quantity) } },
-          });
-        }
+        // Decrement stock (parallel for speed)
+        await Promise.all(
+          items.map((item) =>
+            tx.product.update({
+              where: { id: parseInt(item.id) },
+              data: { stock: { decrement: parseInt(item.quantity) } },
+            })
+          )
+        );
 
         // Credit customer ledger if credit sale
         if (paymentMethod === 'credit' && customerId) {
@@ -131,7 +133,7 @@ async function handler(req, res) {
         }
 
         return newSale;
-      });
+      }, { timeout: 15000, maxWait: 5000 });
 
       await prisma.activityLog.create({
         data: { userId: req.user.id, action: 'CREATE_SALE', description: `Sale ${saleNumber} – Total: ${total}` },
