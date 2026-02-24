@@ -52,6 +52,7 @@ async function handler(req, res) {
         changeAmount = 0,
         splitPayments = [],
         notes,
+        orderType,
       } = req.body;
 
       if (!items || items.length === 0) {
@@ -77,6 +78,7 @@ async function handler(req, res) {
             status: 'completed',
             cashTendered: parseFloat(cashTendered),
             changeAmount: parseFloat(changeAmount),
+            orderType: orderType || null,
             notes: notes || null,
             items: {
               create: items.map((item) => ({
@@ -101,14 +103,20 @@ async function handler(req, res) {
           },
         });
 
-        // Decrement stock (parallel for speed)
+        // Decrement stock only for products that track quantity
         await Promise.all(
-          items.map((item) =>
-            tx.product.update({
+          items.map(async (item) => {
+            const prod = await tx.product.findUnique({
               where: { id: parseInt(item.id) },
-              data: { stock: { decrement: parseInt(item.quantity) } },
-            })
-          )
+              select: { trackQuantity: true },
+            });
+            if (prod?.trackQuantity !== false) {
+              return tx.product.update({
+                where: { id: parseInt(item.id) },
+                data: { stock: { decrement: parseInt(item.quantity) } },
+              });
+            }
+          })
         );
 
         // Credit customer ledger if credit sale

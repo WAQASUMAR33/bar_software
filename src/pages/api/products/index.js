@@ -43,7 +43,7 @@ async function handler(req, res) {
       return res.status(403).json({ error: 'Forbidden' });
     }
     try {
-      const { name, categoryId, price, costPrice, stock, barcode, image, description, variations } = req.body;
+      const { name, categoryId, price, costPrice, stock, barcode, image, description, variations, trackQuantity } = req.body;
       if (!name || price == null || costPrice == null) {
         return res.status(400).json({ error: 'Name, price and cost price are required' });
       }
@@ -58,6 +58,7 @@ async function handler(req, res) {
           barcode: barcode?.trim() || null,
           image: image?.trim() || null,
           description: description?.trim() || null,
+          trackQuantity: trackQuantity !== false,
           variations: variations?.length
             ? { create: variations.map((v) => ({ name: v.name, type: v.type, priceModifier: parseFloat(v.priceModifier || 0) })) }
             : undefined,

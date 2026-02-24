@@ -5,7 +5,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatCurrency } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
-const EMPTY = { name: '', categoryId: '', price: '', costPrice: '', stock: '0', barcode: '', description: '' };
+const EMPTY = { name: '', categoryId: '', price: '', costPrice: '', stock: '0', barcode: '', description: '', trackQuantity: false };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -84,6 +84,7 @@ export default function ProductsPage() {
       name: p.name, categoryId: p.categoryId ? String(p.categoryId) : '',
       price: String(p.price), costPrice: String(p.costPrice),
       stock: String(p.stock), barcode: p.barcode || '', description: p.description || '',
+      trackQuantity: p.trackQuantity !== false,
     });
     setEditId(p.id);
     setOpen(true);
@@ -134,9 +135,13 @@ export default function ProductsPage() {
                     <td className="text-right font-semibold text-blue-600">{formatCurrency(p.price, symbol)}</td>
                     <td className="text-right text-gray-500">{formatCurrency(p.costPrice, symbol)}</td>
                     <td className="text-right">
-                      <span className={`font-semibold ${p.stock <= 10 ? 'text-orange-500' : 'text-gray-700'} ${p.stock === 0 ? 'text-red-600' : ''}`}>
-                        {p.stock}
-                      </span>
+                      {p.trackQuantity === false ? (
+                        <span className="text-xs text-gray-400 italic">Not tracked</span>
+                      ) : (
+                        <span className={`font-semibold ${p.stock <= 10 ? 'text-orange-500' : 'text-gray-700'} ${p.stock === 0 ? 'text-red-600' : ''}`}>
+                          {p.stock}
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className={`badge ${p.active ? 'badge-success' : 'badge-gray'}`}>
@@ -184,7 +189,26 @@ export default function ProductsPage() {
           </div>
           <div className="form-group">
             <label className="label">Stock Quantity</label>
-            <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className="input" min="0" />
+            <input
+              type="number"
+              value={form.stock}
+              onChange={(e) => setForm({ ...form, stock: e.target.value })}
+              className="input"
+              min="0"
+              disabled={!form.trackQuantity}
+            />
+          </div>
+          <div className="form-group flex items-center gap-3 pt-1">
+            <input
+              type="checkbox"
+              id="trackQuantity"
+              checked={form.trackQuantity}
+              onChange={(e) => setForm({ ...form, trackQuantity: e.target.checked })}
+              className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+            />
+            <label htmlFor="trackQuantity" className="label mb-0 cursor-pointer select-none">
+              Track stock quantity
+            </label>
           </div>
           <div className="form-group col-span-2">
             <label className="label">Description</label>

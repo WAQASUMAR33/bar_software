@@ -12,7 +12,7 @@ const METHODS = [
   { value: 'split',  label: 'Split',  icon: '🔀' },
 ];
 
-export default function PaymentModal({ isOpen, onClose, onSuccess, customers = [], taxRate = 0, symbol = 'PKR ' }) {
+export default function PaymentModal({ isOpen, onClose, onSuccess, customers = [], taxRate = 0, symbol = 'PKR ', orderType = 'dine_in' }) {
   const { items, customer, discount, subtotal, total, setCustomer } = useCart();
 
   const [method, setMethod] = useState('cash');
@@ -51,6 +51,7 @@ export default function PaymentModal({ isOpen, onClose, onSuccess, customers = [
         paymentMethod: method,
         cashTendered: method === 'cash' ? parseFloat(cashTendered || 0) : 0,
         changeAmount: change,
+        orderType,
         splitPayments: method === 'split'
           ? Object.entries(splitAmounts)
               .filter(([, v]) => parseFloat(v) > 0)

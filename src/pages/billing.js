@@ -21,6 +21,7 @@ export default function BillingPage() {
   const [heldOpen, setHeldOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [orderType, setOrderType] = useState('dine_in');
 
   const { items, customer, discount, clearCart } = useCart();
   const receiptRef = useRef();
@@ -103,8 +104,32 @@ export default function BillingPage() {
       <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-80px)]">
         {/* Left: product area */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Search bar */}
+          {/* Order type + search bar */}
           <div className="flex gap-2 mb-3">
+            {/* Dine In / Take Away toggle */}
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden flex-shrink-0">
+              <button
+                onClick={() => setOrderType('dine_in')}
+                className={`px-4 py-2 text-sm font-semibold transition-colors ${
+                  orderType === 'dine_in'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                🍽️ Dine In
+              </button>
+              <button
+                onClick={() => setOrderType('takeaway')}
+                className={`px-4 py-2 text-sm font-semibold transition-colors border-l border-gray-200 ${
+                  orderType === 'takeaway'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                🥡 Take Away
+              </button>
+            </div>
+
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               <input
@@ -152,6 +177,7 @@ export default function BillingPage() {
         customers={customers}
         taxRate={taxRate}
         symbol={symbol}
+        orderType={orderType}
       />
 
       {/* Held bills */}

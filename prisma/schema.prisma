@@ -132,11 +132,12 @@ model Product {
   categoryId  Int?     @map("category_id")
   price       Decimal  @db.Decimal(10, 2)
   costPrice   Decimal  @db.Decimal(10, 2) @map("cost_price")
-  stock       Int      @default(0)
-  barcode     String?  @db.VarChar(100)
-  image       String?  @db.VarChar(500)
-  description String?  @db.Text
-  active      Boolean  @default(true)
+  stock         Int      @default(0)
+  barcode       String?  @db.VarChar(100)
+  image         String?  @db.VarChar(500)
+  description   String?  @db.Text
+  active        Boolean  @default(true)
+  trackQuantity Boolean  @default(false) @map("track_quantity")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -212,6 +213,7 @@ model Sale {
   status        SaleStatus    @default(completed)
   cashTendered  Decimal       @default(0) @db.Decimal(10, 2) @map("cash_tendered")
   changeAmount  Decimal       @default(0) @db.Decimal(10, 2) @map("change_amount")
+  orderType     String?       @db.VarChar(20) @map("order_type")
   notes         String?       @db.Text
   createdAt     DateTime      @default(now()) @map("created_at")
 

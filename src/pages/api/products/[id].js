@@ -23,7 +23,7 @@ async function handler(req, res) {
   // PUT – update
   if (req.method === 'PUT') {
     try {
-      const { name, categoryId, price, costPrice, stock, barcode, image, description, active, variations } = req.body;
+      const { name, categoryId, price, costPrice, stock, barcode, image, description, active, variations, trackQuantity } = req.body;
 
       const product = await prisma.product.update({
         where: { id },
@@ -37,6 +37,7 @@ async function handler(req, res) {
           image: image?.trim() || null,
           description: description?.trim() || null,
           active: active != null ? Boolean(active) : undefined,
+          trackQuantity: trackQuantity != null ? Boolean(trackQuantity) : undefined,
         },
         include: { category: true, variations: true },
       });
