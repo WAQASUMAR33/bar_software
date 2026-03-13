@@ -68,6 +68,22 @@ export function CartProvider({ children }) {
     );
   }, []);
 
+  // Load a set of items directly into the cart (replaces current cart)
+  const loadItems = useCallback((orderItems, orderDiscount = 0) => {
+    const mapped = orderItems.map((item) => ({
+      key: item.key || `${item.id}_${item.variation || ''}`,
+      id: item.id,
+      name: item.name,
+      variation: item.variation || null,
+      price: parseFloat(item.price),
+      quantity: parseInt(item.quantity),
+      discount: parseFloat(item.discount || 0),
+      total: parseFloat(item.total),
+    }));
+    setItems(mapped);
+    setDiscount(parseFloat(orderDiscount) || 0);
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
     setCustomer(null);
@@ -97,6 +113,7 @@ export function CartProvider({ children }) {
       removeItem,
       updateQuantity,
       updateItemDiscount,
+      loadItems,
       clearCart,
     }}>
       {children}

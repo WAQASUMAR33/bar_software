@@ -59,7 +59,6 @@ export default function ProductGrid({ products = [], categories = [], symbol = '
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto scrollbar-thin flex-1">
         {filtered.length === 0 && (
           <div className="col-span-full text-center py-16 text-gray-400">
-            <p className="text-3xl mb-2">🍦</p>
             <p>No products found</p>
           </div>
         )}
@@ -70,19 +69,7 @@ export default function ProductGrid({ products = [], categories = [], symbol = '
             disabled={product.stock === 0}
             className={`pos-product-card text-left ${product.stock === 0 ? 'out-of-stock' : ''}`}
           >
-            {/* Image or emoji */}
-            <div className="w-full h-16 flex items-center justify-center mb-2">
-              {product.image ? (
-                <img src={product.image} alt={product.name} className="h-14 w-full object-cover rounded-lg" />
-              ) : (
-                <span className="text-4xl">
-                  {product.category?.name === 'Ice Cream' ? '🍦' :
-                   product.category?.name === 'Milk Shakes' ? '🥤' :
-                   product.category?.name === 'Cold Drinks' ? '🥤' : '🍨'}
-                </span>
-              )}
-            </div>
-            <p className="text-xs font-semibold text-gray-800 leading-tight mb-1 line-clamp-2">
+            <p className="text-sm font-bold text-gray-800 leading-tight mb-1 line-clamp-2">
               {product.name}
             </p>
             <p className="text-sm font-bold text-blue-600">

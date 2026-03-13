@@ -214,6 +214,7 @@ model Sale {
   cashTendered  Decimal       @default(0) @db.Decimal(10, 2) @map("cash_tendered")
   changeAmount  Decimal       @default(0) @db.Decimal(10, 2) @map("change_amount")
   orderType     String?       @db.VarChar(20) @map("order_type")
+  tableId       Int?          @map("table_id")
   notes         String?       @db.Text
   createdAt     DateTime      @default(now()) @map("created_at")
 
@@ -221,6 +222,7 @@ model Sale {
   user          User           @relation(fields: [userId], references: [id])
   items         SaleItem[]
   splitPayments SplitPayment[]
+  table         Table?         @relation(fields: [tableId], references: [id])
 
   @@index([createdAt])
   @@index([saleNumber])
@@ -264,6 +266,47 @@ model SplitPayment {
   sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   @@map("split_payments")
+}
+
+// ────────────────────────────────────────────────────────────
+// TABLES
+// ────────────────────────────────────────────────────────────
+
+model Table {
+  id          Int          @id @default(autoincrement())
+  number      Int          @unique
+  name        String?      @db.VarChar(50)
+  capacity    Int          @default(4)
+  floor       String?      @db.VarChar(50)
+  status      String       @default("free") @db.VarChar(20)
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  tableOrders TableOrder[]
+  sales       Sale[]
+
+  @@index([status])
+  @@map("tables")
+}
+
+model TableOrder {
+  id           Int      @id @default(autoincrement())
+  tableId      Int      @map("table_id")
+  table        Table    @relation(fields: [tableId], references: [id])
+  itemsJson    String   @db.LongText @map("items_json")
+  customerId   Int?     @map("customer_id")
+  customerName String?  @db.VarChar(100) @map("customer_name")
+  discount     Decimal  @default(0) @db.Decimal(10, 2)
+  notes        String?  @db.Text
+  status       String   @default("running") @db.VarChar(20)
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([tableId])
+  @@index([status])
+  @@map("table_orders")
 }
 
 // ────────────────────────────────────────────────────────────

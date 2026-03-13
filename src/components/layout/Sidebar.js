@@ -8,6 +8,7 @@ const NAV = [
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'manager', 'cashier'] },
       { href: '/billing',   label: 'Billing / POS', icon: '🛒', roles: ['admin', 'manager', 'cashier'] },
+      { href: '/tables',    label: 'Table Management', icon: '🪑', roles: ['admin', 'manager', 'cashier'] },
     ],
   },
   {

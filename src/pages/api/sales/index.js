@@ -53,6 +53,7 @@ async function handler(req, res) {
         splitPayments = [],
         notes,
         orderType,
+        tableId,
       } = req.body;
 
       if (!items || items.length === 0) {
@@ -79,6 +80,7 @@ async function handler(req, res) {
             cashTendered: parseFloat(cashTendered),
             changeAmount: parseFloat(changeAmount),
             orderType: orderType || null,
+            tableId: tableId ? parseInt(tableId) : null,
             notes: notes || null,
             items: {
               create: items.map((item) => ({
